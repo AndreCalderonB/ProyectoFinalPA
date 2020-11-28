@@ -1,6 +1,9 @@
 package scripts
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
@@ -22,7 +25,8 @@ func NewGame(ncars int) Game {
 	g.carChan = make(chan int)
 	img, _, _ := ebitenutil.NewImageFromFile("imgs/bg.png", ebiten.FilterDefault)
 	g.bg = *img
-	g.car = CarInit(&g, 1)
+	rand.Seed(time.Now().Unix())
+	g.car = CarInit(&g, 1, (rand.Intn(4) + 1))
 	g.hud = CreateHud(&g, g.num_cars)
 	return g
 }
