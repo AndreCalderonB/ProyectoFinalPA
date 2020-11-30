@@ -9,14 +9,15 @@ import (
 )
 
 type Game struct {
+	sem      *Semaphore
 	playing  bool
 	num_cars int
-	cars     []*Car
-	carChan  chan int
-	car      *Car
-	hud      *Hud
-	dTime    int
-	bg       ebiten.Image
+	//cars     []*Car
+	carChan chan int
+	//car      *Car
+	hud   *Hud
+	dTime int
+	bg    ebiten.Image
 }
 
 func NewGame(ncars int) Game {
@@ -26,7 +27,9 @@ func NewGame(ncars int) Game {
 	img, _, _ := ebitenutil.NewImageFromFile("imgs/bg.png", ebiten.FilterDefault)
 	g.bg = *img
 	rand.Seed(time.Now().Unix())
-	g.car = CarInit(&g, 1, (rand.Intn(4) + 1))
+	sema := SemInit(&g, 1, 1)
+	g.sem = sema
+	//g.car = CarInit(&g, 1, (rand.Intn(4) + 1), ( /*rand.Intn(2)%2 == 1*/ true), g.sem)
 	g.hud = CreateHud(&g, g.num_cars)
 	return g
 }
@@ -34,10 +37,9 @@ func NewGame(ncars int) Game {
 func (g *Game) Update() error {
 	if g.playing {
 		g.dTime = (g.dTime + 1) % 20
-		if err := g.car.Update(g.dTime); err != nil {
+		if err := g.sem.Update(g.dTime, 2); err != nil {
 			g.carChan <- g.dTime
 		}
-
 	}
 	return nil
 }
@@ -45,7 +47,7 @@ func (g *Game) Draw(screen *ebiten.Image) error {
 	cDo := &ebiten.DrawImageOptions{}
 	cDo.GeoM.Translate(0, 0)
 	screen.DrawImage(&g.bg, cDo)
-	if err := g.car.Draw(screen); err != nil {
+	if err := g.sem.Draw(screen); err != nil {
 		return err
 	}
 	/*
