@@ -2,4 +2,7 @@ module github.com/AndreCalderonB/City_Traffic
 
 go 1.15
 
-require github.com/hajimehoshi/ebiten v1.12.3
+require (
+	github.com/hajimehoshi/ebiten v1.12.3
+	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
+)
