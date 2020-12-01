@@ -50,12 +50,13 @@ func CarInit(g *Game, spd float64, d int, ds int, s *Semaphore, i int) *Car {
 		trn:    ds,
 		pass:   false,
 	}
+
 	c.cardinal = []string{"Oeste", "Sur", "Este", "Norte"}
 	c.vuelta = []string{"", "Derecha", "Frente", "Izquierda"}
 	c.des = ((c.sem.position) + c.trn) % 4
-
 	c.light = c.sem.state
-	switch d := c.dir; d {
+
+	switch d := c.dir; d { // cargar imagen inicial
 	case 0: // Oeste-Este
 		img, _, _ := ebitenutil.NewImageFromFile("imgs/carrito.png", ebiten.FilterDefault)
 		c.img = *img
