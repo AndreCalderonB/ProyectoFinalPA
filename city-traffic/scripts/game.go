@@ -48,7 +48,7 @@ func NewGame(ncars int) Game {
 
 	wg.Add(4) // Esperarpa para que los 4 semaforos se terminen de crear
 	for i := 0; i < 4; i++ {
-		go SemInit(&g, ncars, 1, i, &wg)
+		go SemInit(&g, i, &wg)
 	}
 	wg.Wait() // Una vez creados los 4 seaforos termina de esperar
 
@@ -60,7 +60,7 @@ func NewGame(ncars int) Game {
 
 func (g *Game) handleLights() {
 	for true {
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		g.sem[g.semactual].toggleLight()
 		g.semactual = (g.semactual + 1) % 4

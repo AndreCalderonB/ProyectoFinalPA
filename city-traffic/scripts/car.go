@@ -3,8 +3,9 @@ package scripts
 import (
 	"fmt"
 	"math/rand"
-	"time"
 	"sync"
+	"time"
+
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
@@ -26,7 +27,6 @@ type Car struct {
 	sem      *Semaphore
 	cardinal []string
 	vuelta   []string
-	exQ      *[]*Car
 }
 
 var wg sync.WaitGroup
@@ -36,7 +36,6 @@ func CarInit(g *Game, spd float64, d int, ds int, s *Semaphore, i int) *Car {
 	rand.Seed(time.Now().UnixNano())
 	min := 3
 	max := 5
-
 
 	c := Car{
 		game:   g,
@@ -55,72 +54,79 @@ func CarInit(g *Game, spd float64, d int, ds int, s *Semaphore, i int) *Car {
 	c.vuelta = []string{"", "Derecha", "Frente", "Izquierda"}
 	c.des = ((c.sem.position) + c.trn) % 4
 
-	//fmt.Println("Carrito: ", d, " Vuelta: ", c.trn, "Destino: ", c.des)
 	c.light = c.sem.state
 	switch d := c.dir; d {
 	case 0: // Oeste-Este
 		img, _, _ := ebitenutil.NewImageFromFile("imgs/carrito.png", ebiten.FilterDefault)
 		c.img = *img
-		c.xPos = 0 // giro 250
+		c.xPos = -240 // giro 250
 		c.yPos = 480
 	case 1: // Sur-Norte
 		img, _, _ := ebitenutil.NewImageFromFile("imgs/carrito_a.png", ebiten.FilterDefault)
 		c.img = *img
 		c.xPos = 480
-		c.yPos = 870 // giro 250
+		c.yPos = 1110 // giro 250
 	case 2: // Este-Oeste
 		img, _, _ := ebitenutil.NewImageFromFile("imgs/carrito_i.png", ebiten.FilterDefault)
 		c.img = *img
-		c.xPos = 860 // giro 325
+		c.xPos = 1110 // giro 325
 		c.yPos = 400
 	case 3: // Norte-Sur
 		img, _, _ := ebitenutil.NewImageFromFile("imgs/carrito_ab.png", ebiten.FilterDefault)
 		c.img = *img
 		c.xPos = 400
-		c.yPos = -5 // giro 325
+		c.yPos = -230 // giro 325
 	}
-
+	go c.checkSemaphore()
 	go c.matchSpeed()
 
 	return &c
 }
 
-func (c *Car) Update(dTime int) error {
+func (c *Car) checkSemaphore() {
 	// Checar semáforo
-	c.light = c.sem.state
-	if !c.light {
-		if !c.run {
-			c.carStart()
-		}
-	} else {
-		if c.run {
-			c.carStop()
+	for true {
+		time.Sleep(time.Duration(50) * time.Millisecond)
+		c.light = c.sem.state
+		if !c.light {
+			if !c.run {
+				c.carStart()
+			}
+		} else {
+			if c.run {
+				c.carStop()
+			}
 		}
 	}
+}
+
+func (c *Car) Update(dTime int) error {
+
 	//Dar Vueltas
 	if c.run { // control para parar-avanzar el auto
-
 		// si ha pasado el semáforo en distancia pero no lo ha registrado
 		// o sea en cuanto detecte que pase el auto
 		// antes de salir del mapa
-		if (c.dis >= 360 && c.dis < 1050) && !c.pass {
-			fmt.Println("Carrito: ", c.sem.position, " Vuelta: ", c.trn /* vuelt[c.des] */, "Destino: ", c.cardinal[c.des])
+		if (c.dis >= 530 && c.dis < 1050) && !c.pass {
 			c.pass = true
 			// lo saca de la lista de espera tras el semaforo
 			c.dequeueW()
-		} else if c.dis >= 1050 { // ya salio del mapa
+		} else if c.dis >= 1180 { // ya salio del mapa
 			c.dequeue() // despawnealo
 		}
 
 		/*
 			if está en rango de vuelta && destino es hacia donde se da la vuelta
-		*/if (c.dis >= 400 && c.dis <= 450) && c.trn == 1 { // vuelta derecha
+		*/
+		if (c.dis >= 650 && c.dis <= 690) && c.trn == 1 { // vuelta derecha
 			c.dir = (c.des + 2) % 4
+			fmt.Println(c.dis)
 			imgdir := []string{"imgs/carrito.png", "imgs/carrito_a.png", "imgs/carrito_i.png", "imgs/carrito_ab.png"}
 			img, _, _ := ebitenutil.NewImageFromFile(imgdir[c.dir], ebiten.FilterDefault)
 			c.img = *img
-		} else if (c.dis >= 461 && c.dis <= 520) && c.trn == 3 { // vuelta izquierda
+		} else if (c.dis >= 700 && c.dis <= 750) && c.trn == 3 { // vuelta izquierda
 			c.dir = (c.des + 2) % 4
+			fmt.Println(c.dis)
 			imgdir := []string{"imgs/carrito.png", "imgs/carrito_a.png", "imgs/carrito_i.png", "imgs/carrito_ab.png"}
 			img, _, _ := ebitenutil.NewImageFromFile(imgdir[c.dir], ebiten.FilterDefault)
 			c.img = *img
@@ -156,12 +162,12 @@ func (c *Car) Draw(screen *ebiten.Image) error {
 
 func (c *Car) matchSpeed() {
 	for true {
-		time.Sleep(time.Millisecond*50)
+		time.Sleep(time.Millisecond * 10)
 		i := int(c.exitQueuePos())
-		if i > 0 {  // si hay algun auto
-			if c.pass {// pasando el semaforo revisa la velocida dde otros
+		if i > 0 { // si hay algun auto
+			if c.pass { // pasando el semaforo revisa la velocida dde otros
 				cr := c.game.exitQueue[c.des][i-1] // guarda referencia al carro frente a el
-				if (c.dis - cr.dis) < 100 {
+				if (c.dis - cr.dis) <= 250 {
 					if c.speed > cr.speed { // iguala su velocidad
 						c.speed = cr.speed // si es mayor
 					}
@@ -170,7 +176,7 @@ func (c *Car) matchSpeed() {
 				i := int(c.queuePos())
 				if i > 0 {
 					cr := c.sem.carsAtLight[i-1] // guarda referencia al carro frente a el
-					if (c.dis - cr.dis) < 100 {
+					if (c.dis - cr.dis) <= 250 {
 						if c.speed > cr.speed { // iguala su velocidad
 							c.speed = cr.speed // si es mayor
 						}
@@ -202,10 +208,11 @@ func (c *Car) atPos() bool {
 	pos := float64(c.queuePos())
 	// comparar distancia recorrida, contra distancia de semaforo segun pos
 	// Ej. Posición 2 tiene que estar a = distancia de semaforo - distancia de un carro * pos
-	waitPos := c.dis < (290 - 90*pos)
-	if c.dis < waitPos {
+	//waitPos := c.dis < (290 - 90*pos)
+	dist := (500 - 90*pos)
+	if c.dis < dist {
 		return false
-	} else if c.dis == waitPos {
+	} else if c.dis == dist {
 		return true
 	} else {
 		return true
@@ -229,7 +236,6 @@ func (c *Car) dequeueW() { // dequeue de la lista del semaforo
 
 	if len(c.sem.carsAtLight) > 0 {
 
-		fmt.Println(c.des)
 		c.queue()
 		i := c.queuePos()
 		// elimina el primer elemento
@@ -252,11 +258,10 @@ func (c *Car) dequeue() {
 		} else { // remove first element
 			c.game.exitQueue[c.des] = c.game.exitQueue[c.des][1:]
 			c.sem.cars = c.sem.cars[1:]
+
 		}
-		fmt.Println("Spawn")
-
-		go c.sem.buildCar()
-
 		c.game.hud.q[c.des]--
+		c.game.hud.curr_cars--
+
 	}
 }

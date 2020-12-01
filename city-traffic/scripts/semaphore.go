@@ -24,11 +24,12 @@ type Semaphore struct {
 	state       bool //true - verde - false rojo
 	img         ebiten.Image
 	imgTurn     ebiten.Image
+	r           int
 }
 
 var s Semaphore
 
-func SemInit(g *Game, r int, d int, pos int, wg *sync.WaitGroup) {
+func SemInit(g *Game, pos int, wg *sync.WaitGroup) {
 
 	s := Semaphore{
 		game:     g,
@@ -37,6 +38,7 @@ func SemInit(g *Game, r int, d int, pos int, wg *sync.WaitGroup) {
 		state:    true,
 		position: pos,
 		x:        0,
+		r:        g.num_cars,
 	}
 	//Posicionamineto de letreros vuelta en u
 	switch p := s.position; p {
@@ -69,24 +71,24 @@ func SemInit(g *Game, r int, d int, pos int, wg *sync.WaitGroup) {
 	s.cars = []*Car{}
 	s.carsAtLight = []*Car{}
 
-	for i := 0; i < r; i++ {
-		go s.makeCar(i)
-	}
-
+	go s.queueManager()
 	g.sem[pos] = &s
 	wg.Done()
 }
-func (s *Semaphore) makeCar(i int) {
 
-	time.Sleep(time.Duration(i*2) * time.Second)
+func (s *Semaphore) queueManager() {
+	for true {
+		time.Sleep(time.Duration(3) * time.Second)
+		if len(s.carsAtLight) < s.r {
+			s.buildCar()
+		}
+	}
 
-	s.buildCar()
 }
 
-func (s *Semaphore) buildCar() {
+func (s *Semaphore) buildCar() { // construye y enlista un carro
 
 	rand.Seed(time.Now().UnixNano())
-	time.Sleep(time.Duration(5) * time.Second * time.Duration(len(s.cars)))
 
 	min := 1
 	max := 4
@@ -128,7 +130,9 @@ func (s *Semaphore) Draw(screen *ebiten.Image) error {
 			return err
 		}
 	}
+	//Semaforos
 	cDo := &ebiten.DrawImageOptions{}
+	//Letreros
 	cDa := &ebiten.DrawImageOptions{}
 	cDo.GeoM.Translate(s.xPos, s.yPos)
 	screen.DrawImage(&s.img, cDo)
