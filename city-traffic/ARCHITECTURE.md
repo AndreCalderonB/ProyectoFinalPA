@@ -62,6 +62,8 @@ As we know, we need to implement the `Game` interface. This is done in `main.go`
 `hud.go` this entity renders text information at the screen:
 * **Draw**. This function only shows the information from the game and draws a text into the screen
 
+![uml](uml-city-traffic.png)
+
 ### Concurrency
 
 Each Semaphore has a queueManager, which runs concurrently, it spawns cars, and helps us control the amount of cars on each lane, so they don´t go on top of each other.
