@@ -1,7 +1,6 @@
 package scripts
 
 import (
-	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -39,7 +38,7 @@ func SemInit(g *Game, r int, d int, pos int, wg *sync.WaitGroup) {
 		position: pos,
 		x:        0,
 	}
-
+	//Posicionamineto de letreros vuelta en u
 	switch p := s.position; p {
 	case 0: // Norte-Sur
 		s.xPos = 330
@@ -79,7 +78,7 @@ func SemInit(g *Game, r int, d int, pos int, wg *sync.WaitGroup) {
 }
 func (s *Semaphore) makeCar(i int) {
 
-	time.Sleep(time.Duration(i*3) * time.Second)
+	time.Sleep(time.Duration(i*2) * time.Second)
 
 	s.buildCar()
 }
@@ -87,10 +86,12 @@ func (s *Semaphore) makeCar(i int) {
 func (s *Semaphore) buildCar() {
 
 	rand.Seed(time.Now().UnixNano())
-	min := 0
+	time.Sleep(time.Duration(5) * time.Second * time.Duration(len(s.cars)))
+
+	min := 1
 	max := 4
 	s.x++
-	s.queue(CarInit(s.game, 2, s.position+1, rand.Intn(max-min)+min, s, s.x))
+	s.queue(CarInit(s.game, 2, s.position, rand.Intn(max-min)+min, s, s.x))
 
 }
 
@@ -157,28 +158,4 @@ func (s *Semaphore) queue(c *Car) {
 
 func (s *Semaphore) queueW(c *Car) {
 	s.carsAtLight = append(s.carsAtLight, c)
-}
-
-func (s *Semaphore) dequeue() *Car {
-	if len(s.cars) > 0 {
-		s.game.hud.curr_cars--
-
-		fmt.Println("Spawn")
-
-		s.buildCar()
-
-		res := s.cars[0]
-		s.cars = s.cars[1:]
-
-		//s.queue(CarInit(s.game, 2, , rand.Int(nmax-(min))+min, s, s.x))
-
-		return res
-	}
-
-	return nil
-}
-func (s *Semaphore) dequeueW() {
-	if len(s.carsAtLight) > 0 {
-		s.carsAtLight = s.carsAtLight[1:]
-	}
 }

@@ -9,8 +9,19 @@ import (
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
+/* Orientacion OSEN
+
+0 - Oeste
+1 - Sur
+2 - Este
+3 - Norte
+
+
+*/
+
 type Game struct {
 	sem       []*Semaphore
+	exitQueue [][]*Car
 	playing   bool
 	num_cars  int
 	carChan   chan int
@@ -30,11 +41,14 @@ func NewGame(ncars int) Game {
 	g.hud = CreateHud(&g)
 	g.carChan = make(chan int)
 	g.sem = make([]*Semaphore, 4)
+
+	g.exitQueue = [][]*Car{[]*Car{}, []*Car{}, []*Car{}, []*Car{}}
+
 	rand.Seed(time.Now().Unix())
 
 	wg.Add(4) // Esperarpa para que los 4 semaforos se terminen de crear
 	for i := 0; i < 4; i++ {
-		go SemInit(&g, 3, 1, i, &wg)
+		go SemInit(&g, ncars, 1, i, &wg)
 	}
 	wg.Wait() // Una vez creados los 4 seaforos termina de esperar
 
@@ -46,11 +60,11 @@ func NewGame(ncars int) Game {
 
 func (g *Game) handleLights() {
 	for true {
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		g.sem[g.semactual].toggleLight()
 		g.semactual = (g.semactual + 1) % 4
-		time.Sleep(900 * time.Millisecond)
+		time.Sleep(1250 * time.Millisecond)
 		g.sem[g.semactual].toggleLight()
 
 	}

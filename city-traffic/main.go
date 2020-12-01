@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+
 	"github.com/AndreCalderonB/City_Traffic/scripts"
 	"github.com/hajimehoshi/ebiten"
 )

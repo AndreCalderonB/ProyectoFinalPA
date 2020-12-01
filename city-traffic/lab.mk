@@ -9,4 +9,4 @@ build:
 
 test: build
 	@echo Test City-Traffic - main.go
-	./main
+	./main 5
