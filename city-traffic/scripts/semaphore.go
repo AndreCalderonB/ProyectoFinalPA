@@ -1,6 +1,7 @@
 package scripts
 
 import (
+	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -19,6 +20,7 @@ type Semaphore struct {
 	yPos        float64
 	position    int
 	dTime       int
+	x           int
 	carChan     chan int
 	state       bool //true - verde - false rojo
 	img         ebiten.Image
@@ -35,6 +37,7 @@ func SemInit(g *Game, r int, d int, pos int, wg *sync.WaitGroup) {
 		timerG:   5,
 		state:    true,
 		position: pos,
+		x:        0,
 	}
 
 	switch p := s.position; p {
@@ -68,22 +71,29 @@ func SemInit(g *Game, r int, d int, pos int, wg *sync.WaitGroup) {
 	s.carsAtLight = []*Car{}
 
 	for i := 0; i < r; i++ {
-		go s.makeCars(r, i)
+		go s.makeCar(i)
 	}
 
 	g.sem[pos] = &s
 	wg.Done()
 }
-func (s *Semaphore) makeCars(r int, i int) {
+func (s *Semaphore) makeCar(i int) {
 
 	time.Sleep(time.Duration(i*3) * time.Second)
+
+	s.buildCar()
+}
+
+func (s *Semaphore) buildCar() {
 
 	rand.Seed(time.Now().UnixNano())
 	min := 0
 	max := 4
-	s.queue(CarInit(s.game, 2, s.position+1, rand.Intn(max-min)+min, s, i))
+	s.x++
+	s.queue(CarInit(s.game, 2, s.position+1, rand.Intn(max-min)+min, s, s.x))
 
 }
+
 func (s *Semaphore) toggleLight() {
 	s.state = !s.state
 }
@@ -126,21 +136,21 @@ func (s *Semaphore) Draw(screen *ebiten.Image) error {
 		cDa.GeoM.Translate(s.xPos+20, s.yPos)
 		screen.DrawImage(&s.imgTurn, cDa)
 	case 1:
-		cDa.GeoM.Translate(s.xPos, s.yPos-20)
+		cDa.GeoM.Translate(s.xPos, s.yPos-40)
 		screen.DrawImage(&s.imgTurn, cDa)
 	case 2:
-		cDa.GeoM.Translate(s.xPos-20, s.yPos)
+		cDa.GeoM.Translate(s.xPos-20, s.yPos-20)
 		screen.DrawImage(&s.imgTurn, cDa)
 	case 3:
-		cDa.GeoM.Translate(s.xPos, s.yPos+20)
+		cDa.GeoM.Translate(s.xPos, s.yPos-20)
 		screen.DrawImage(&s.imgTurn, cDa)
 	}
 	return nil
 }
 
 func (s *Semaphore) queue(c *Car) {
-	s.g.hud.totl_cars++
-	s.g.hud.curr_cars++
+	s.game.hud.totl_cars++
+	s.game.hud.curr_cars++
 	s.cars = append(s.cars, c)
 	s.queueW(c)
 }
@@ -151,10 +161,20 @@ func (s *Semaphore) queueW(c *Car) {
 
 func (s *Semaphore) dequeue() *Car {
 	if len(s.cars) > 0 {
+		s.game.hud.curr_cars--
+
+		fmt.Println("Spawn")
+
+		s.buildCar()
+
 		res := s.cars[0]
 		s.cars = s.cars[1:]
+
+		//s.queue(CarInit(s.game, 2, , rand.Int(nmax-(min))+min, s, s.x))
+
 		return res
 	}
+
 	return nil
 }
 func (s *Semaphore) dequeueW() {

@@ -1,7 +1,6 @@
 package scripts
 
 import (
-	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -28,9 +27,9 @@ func NewGame(ncars int) Game {
 	var wg sync.WaitGroup
 
 	g.bg = *img
+	g.hud = CreateHud(&g)
 	g.carChan = make(chan int)
 	g.sem = make([]*Semaphore, 4)
-
 	rand.Seed(time.Now().Unix())
 
 	wg.Add(4) // Esperarpa para que los 4 semaforos se terminen de crear
@@ -41,13 +40,12 @@ func NewGame(ncars int) Game {
 
 	g.sem[0].toggleLight()
 	go g.handleLights()
-	g.hud = CreateHud(&g)
+
 	return g
 }
 
 func (g *Game) handleLights() {
 	for true {
-		fmt.Println(g.semactual)
 		time.Sleep(2 * time.Second)
 
 		g.sem[g.semactual].toggleLight()

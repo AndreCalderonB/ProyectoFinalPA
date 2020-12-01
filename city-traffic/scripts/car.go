@@ -1,8 +1,6 @@
 package scripts
 
 import (
-	"fmt"
-
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
@@ -87,8 +85,9 @@ func (c *Car) Update(dTime int) error {
 				c.sem.dequeueW()
 			}
 			c.pass = true
-		} else if c.dis >= 900 {
-			fmt.Println(c.sem.dequeue())
+		}
+		if c.dis >= 910 {
+			c.sem.dequeue()
 		}
 
 		switch t := c.trn + 1; t {
